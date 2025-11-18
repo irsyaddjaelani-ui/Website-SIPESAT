@@ -1,0 +1,469 @@
+/* =========================================
+   1. KONFIGURASI DASAR & RESET
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+:root {
+    /* Palet Warna Utama */
+    --bg-dark: #0F172A;       /* Slate 900 - Latar Belakang Utama */
+    --bg-card: #1E293B;       /* Slate 800 - Latar Belakang Kartu/Widget */
+    --bg-card-hover: #334155; /* Slate 700 - Efek Hover */
+    --text-primary: #F8FAFC;  /* Slate 50 - Teks Utama */
+    --text-secondary: #94A3B8;/* Slate 400 - Teks Sekunder */
+    --accent: #BEF264;        /* Lime 400 - Warna Aksen Hijau Neon */
+    
+    /* Warna Status */
+    --status-success: #22C55E; /* Green 500 */
+    --status-warning: #EAB308; /* Yellow 500 */
+    --status-danger: #EF4444;  /* Red 500 */
+    --status-info: #3B82F6;    /* Blue 500 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-secondary);
+    line-height: 1.5;
+    overflow-x: hidden; /* Mencegah scroll horizontal */
+    display: flex;
+    min-height: 100vh;
+}
+
+/* =========================================
+   2. KOMPONEN UI UMUM
+   ========================================= */
+.text-accent { color: var(--accent); }
+.bg-accent { background-color: var(--accent); }
+.border-accent { border-color: var(--accent); }
+
+/* Kartu / Widget */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--bg-card-hover);
+    border-radius: 0.75rem; /* 12px */
+    padding: 1.5rem; /* 24px */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: #475569; /* Slate 600 */
+}
+
+/* Judul Seksi */
+.section-title {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 24px;
+    background-color: var(--accent);
+    border-radius: 2px;
+}
+
+/* =========================================
+   3. SIDEBAR NAVIGASI
+   ========================================= */
+.sidebar {
+    width: 16rem; /* 256px */
+    background-color: #1E293B; /* Lebih terang sedikit dari body */
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--bg-card-hover);
+    flex-shrink: 0;
+    position: fixed; /* Tetap di kiri */
+    height: 100vh;
+    z-index: 50;
+    transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+}
+
+.sidebar-logo-text {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.025em;
+}
+
+.nav-menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 1rem;
+}
+
+.nav-link:hover {
+    background-color: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.nav-link.active {
+    background-color: var(--accent);
+    color: var(--bg-dark);
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(190, 242, 100, 0.3); /* Glow effect */
+}
+
+.nav-link i {
+    width: 1.5rem; /* 24px space for icon */
+    text-align: center;
+    margin-right: 0.75rem;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+    border-top: 1px solid var(--bg-card-hover);
+    text-align: center;
+}
+
+/* Indikator Online Pulsating */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--bg-card-hover);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.pulse-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--status-success);
+    border-radius: 50%;
+    animation: pulse-animation 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-animation {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+/* =========================================
+   4. KONTEN UTAMA
+   ========================================= */
+.main-content {
+    flex: 1;
+    margin-left: 16rem; /* Sesuaikan dengan lebar sidebar */
+    padding: 2rem;
+    height: 100vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bg-card-hover);
+}
+
+.page-title {
+    font-size: 2.25rem; /* 36px */
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+/* Grid Layouts */
+.grid-layout {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+    .grid-layout { grid-template-columns: repeat(2, 1fr); }
+    .md-col-span-2 { grid-column: span 2; }
+    .md-col-span-3 { grid-column: span 3; }
+}
+
+@media (min-width: 1024px) {
+    .grid-layout { grid-template-columns: repeat(4, 1fr); }
+    .lg-col-span-2 { grid-column: span 2; }
+    .lg-col-span-3 { grid-column: span 3; }
+    .lg-col-span-4 { grid-column: span 4; }
+}
+
+/* =========================================
+   5. ELEMEN DASHBOARD SPESIFIK
+   ========================================= */
+
+/* Widget Sensor */
+.sensor-widget {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sensor-icon {
+    font-size: 2.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(30, 41, 59, 0.5);
+    border-radius: 50%;
+}
+
+.sensor-value {
+    font-size: 2.25rem; /* 36px */
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.sensor-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Progress Bars */
+.progress-container {
+    width: 100%;
+    background-color: var(--bg-card-hover);
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 1.25rem; /* 20px */
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--accent);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Tombol Kontrol */
+.btn-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-control:disabled {
+    background-color: var(--bg-card-hover);
+    color: #64748B;
+    border-color: var(--bg-card-hover);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-control.active {
+    background-color: var(--accent);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px rgba(190, 242, 100, 0.4);
+}
+
+.btn-control.inactive {
+    background-color: transparent;
+    border-color: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.btn-control.inactive:hover:not(:disabled) {
+    background-color: var(--bg-card-hover);
+}
+
+.btn-control.danger.active {
+    background-color: var(--status-danger);
+    color: white;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Log System */
+.log-container {
+    height: 250px;
+    overflow-y: auto;
+    background-color: #020617; /* Sangat gelap */
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--bg-card-hover);
+    font-family: 'Courier New', Courier, monospace; /* Font monospaced untuk log */
+}
+
+.log-container ul {
+    list-style: none;
+}
+
+.log-item {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.log-time { color: #64748B; min-width: 80px; }
+.log-auto { color: #94A3B8; }
+.log-manual { color: var(--status-warning); }
+.log-danger { color: var(--status-danger); font-weight: bold; }
+.log-system { color: var(--status-success); }
+
+/* =========================================
+   6. HALAMAN ANALISIS (HEATMAP & CHART)
+   ========================================= */
+.heatmap-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px;
+}
+
+.heatmap-table th {
+    text-align: left;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.heatmap-cell {
+    height: 40px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(0,0,0,0.7);
+    text-align: center;
+    vertical-align: middle;
+    transition: opacity 0.2s;
+    cursor: help;
+}
+
+.heatmap-cell:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.cell-low { background-color: #4ADE80; } /* Hijau */
+.cell-med { background-color: #FACC15; } /* Kuning */
+.cell-high { background-color: #F87171; } /* Merah */
+.cell-none { background-color: var(--bg-card-hover); opacity: 0.3; } /* Kosong/Siang */
+
+/* =========================================
+   7. RESPONSIVE UTILITIES
+   ========================================= */
+/* Scrollbar Kustom (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--bg-card-hover);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Mobile Navigation Toggle */
+.mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--accent);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 50%;
+    width: 3.5rem;
+    height: 3.5rem;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 80%; /* Lebih lebar di mobile */
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+    .mobile-nav-toggle {
+        display: flex;
+    }
+    /* Overlay saat sidebar terbuka */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 40;
+        display: none;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
