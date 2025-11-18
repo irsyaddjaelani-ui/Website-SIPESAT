@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring - SIPESAT</title>
+    
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Memuat Font Awesome (untuk Ikon) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Memuat Chart.js untuk Grafik Historis -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Konfigurasi Font dan Warna Kustom -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* bg-slate-900 */
+            color: #E2E8F0; /* text-slate-200 */
+            overflow-x: hidden;
+        }
+        
+        .text-accent { color: #BEF264; }
+        .bg-accent { background-color: #BEF264; }
+        .border-accent { border-color: #BEF264; }
+
+        /* Styling untuk Navigasi Sidebar */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #94A3B8; /* text-slate-400 */
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background-color: #1E293B; /* bg-slate-800 */
+            color: #E2E8F0; /* text-slate-200 */
+        }
+        .nav-link-active {
+            background-color: #BEF264;
+            color: #0F172A; /* bg-slate-900 */
+            font-weight: 700;
+        }
+        .nav-link-active:hover {
+            background-color: #BEF264;
+            color: #0F172A;
+        }
+        .nav-link i {
+            width: 28px; /* Memberi jarak ikon */
+        }
+        
+        /* Styling Progress Bar */
+        .progress-bar-container {
+            background-color: #334155; /* bg-slate-700 */
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 20px;
+        }
+        .progress-bar {
+            background-color: #BEF264; /* bg-accent */
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #0F172A;
+            line-height: 20px;
+        }
+        
+        .animate-pulse-fast {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        /* Styling Tombol Kontrol */
+        .control-button {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid #334155; /* border-slate-700 */
+        }
+        .control-button:disabled {
+            background-color: #334155; /* bg-slate-700 */
+            color: #64748B; /* text-slate-500 */
+            cursor: not-allowed;
+        }
+        .control-button.on {
+            background-color: #BEF264;
+            color: #0F172A;
+            border-color: #BEF264;
+        }
+        .control-button.off {
+            background-color: #1E293B; /* bg-slate-800 */
+            color: #E2E8F0; /* text-slate-200 */
+        }
+
+        /* Styling Log */
+        #log-list {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #020617; /* bg-slate-950 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #334155;
+        }
+        #log-list li {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid #1E293B; /* bg-slate-800 */
+        }
+        #log-list li:last-child { border-bottom: none; }
+        #log-list .log-auto { color: #94A3B8; }
+        #log-list .log-manual { color: #EAB308; }
+        #log-list .log-danger { color: #F87171; }
+        #log-list .log-system { color: #34D399; }
+        
+        /* Styling untuk Heatmap Tabel */
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .heatmap-table th {
+            text-align: left;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            color: #94A3B8;
+        }
+        .heatmap-table td {
+            height: 40px;
+            border: 2px solid #0F172A; /* bg-slate-900 */
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+            color: #1E293B;
+            font-weight: bold;
+        }
+        .heatmap-low { background-color: #4ADE80; } /* green-400 */
+        .heatmap-medium { background-color: #FACC15; } /* yellow-400 */
+        .heatmap-high { background-color: #F87171; } /* red-400 */
+        
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <!-- SIDEBAR NAVIGASI -->
+    <nav class="w-64 bg-slate-800 p-6 flex-shrink-0">
+        <div class="flex items-center space-x-2 mb-8">
+            <i class="fa-solid fa-seedling text-3xl text-accent"></i>
+            <h1 class="text-2xl font-bold text-white">SIPESAT</h1>
+        </div>
+        
+        <ul class="space-y-2">
+            <li>
+                <button id="nav-dashboard" class="nav-link nav-link-active w-full">
+                    <i class="fa-solid fa-home"></i>
+                    <span>Dashboard</span>
+                </button>
+            </li>
+            <li>
+                <button id="nav-aktivitas" class="nav-link w-full">
+                    <i class="fa-solid fa-bug"></i>
+                    <span>Aktivitas Hama</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="mt-auto pt-8 border-t border-slate-700 text-center">
+             <div id="status-koneksi" class="flex items-center space-x-2 bg-slate-900 justify-center border border-slate-700 px-4 py-2 rounded-lg">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse-fast"></div>
+                <span class="font-medium text-green-400">ONLINE</span>
+            </div>
+             <p class="text-xs text-slate-500 mt-4">Tim Sipesat-Innovillage 2025</p>
+        </div>
+    </nav>
+
+    <!-- KONTEN UTAMA -->
+    <div class="flex-1 p-8 overflow-y-auto">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- HALAMAN 1: DASHBOARD (Default Terlihat) -->
+            <div id="page-dashboard">
+                <header class="mb-6">
+                    <h1 class="text-3xl font-bold text-white">Dashboard Real-time</h1>
+                    <p class="text-slate-400">Lokasi: Desa Girikulon, Magelang [ID: 001]</p>
+                </header>
+
+                <!-- DATA SENSOR (BAGIAN ATAS) -->
+                <h2 class="text-2xl font-bold text-accent mb-4">DATA SENSOR (Real-time)</h2>
+                <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- WIDGET 1 & 2: Sensor DHT22 -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <div class="flex items-center space-x-4">
+                            <i class="fa-solid fa-thermometer-half text-4xl text-accent"></i>
+                            <div>
+                                <p class="text-sm font-medium text-slate-400">SUHU LINGKUNGAN</p>
+                                <p id="suhu-value" class="text-4xl font-bold text-white">--.- °C</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <div class="flex items-center space-x-4">
+                            <i class="fa-solid fa-droplet text-4xl text-accent"></i>
+                            <div>
+                                <p class="text-sm font-medium text-slate-400">KELEMBAPAN UDARA</p>
+                                <p id="kelembapan-value" class="text-4xl font-bold text-white">-- %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WIDGET 3: Sensor LDR (Mode Operasi) -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <div class="flex items-center space-x-4">
+                            <i id="mode-icon" class="fa-solid fa-moon text-4xl text-accent"></i>
+                            <div>
+                                <p class="text-sm font-medium text-slate-400">MODE OPERASI</p>
+                                <p id="mode-value" class="text-3xl font-bold text-white">Mode Malam</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WIDGET 4: Sensor Ultrasonik (Wadah) -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <p class="text-sm font-medium text-slate-400 mb-2">KETINGGIAN WADAH (ULTRASONIK)</p>
+                        <div class="progress-bar-container">
+                            <div id="wadah-progress" class="progress-bar" style="width: 0%;">0%</div>
+                        </div>
+                        <p id="wadah-status" class="text-sm text-center mt-2 text-slate-400">Menghitung...</p>
+                    </div>
+
+                    <!-- WIDGET 5: Sensor PIR (Aktivitas Hama) -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg md:col-span-2 lg:col-span-4">
+                        <p class="text-sm font-medium text-slate-400 mb-3">AKTIVITAS HAMA (4 SENSOR PIR)</p>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">PIR 1 (UTARA)</p>
+                                <p id="pir-1-value" class="text-xl font-bold text-green-500">Rendah</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">PIR 2 (TIMUR)</p>
+                                <p id="pir-2-value" class="text-xl font-bold text-green-500">Rendah</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">PIR 3 (SELATAN)</p>
+                                <p id="pir-3-value" class="text-xl font-bold text-green-500">Rendah</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-slate-500">PIR 4 (BARAT)</p>
+                                <p id="pir-4-value" class="text-xl font-bold text-green-500">Rendah</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WIDGET 6: Status Sistem (Baterai) -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg md:col-span-2 lg:col-span-4">
+                        <p class="text-sm font-medium text-slate-400 mb-2">STATUS DAYA (PLTS)</p>
+                        <div class="flex items-center space-x-3">
+                            <i id="baterai-icon" class="fa-solid fa-battery-full text-2xl text-green-500"></i>
+                            <div class="progress-bar-container w-full">
+                                <div id="baterai-progress" class="progress-bar bg-green-500" style="width: 0%;">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- KONTROL MANUAL & AKSI -->
+                <h2 class="text-2xl font-bold text-accent mb-4">KONTROL MANUAL & AKSI</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <!-- Toggle Mode -->
+                        <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                            <p class="text-sm font-medium text-slate-400 mb-2">SISTEM OPERASI</A</p>
+                            <button id="mode-toggle-button" class="control-button on w-full">Mode: OTOMATIS</button>
+                            <p class="text-xs text-slate-500 mt-2">Tombol manual nonaktif saat mode Otomatis.</p>
+                        </div>
+                        <!-- Kontrol UV & Jaring -->
+                        <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                            <p class="text-sm font-medium text-slate-400 mb-2">PERANGKAP (UV & JARING)</p>
+                            <button id="uv-toggle-button" class="control-button off w-full" disabled>Aktifkan Manual</button>
+                            <div class="flex justify-between text-sm mt-3">
+                                <span id="status-uv"><i class="fa-solid fa-lightbulb"></i> UV: MATI</span>
+                                <span id="status-jaring"><i class="fa-solid fa-bolt"></i> JARING: NONAKTIF</span>
+                            </div>
+                        </div>
+                        <!-- Kontrol Sprayer -->
+                        <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                            <p class="text-sm font-medium text-slate-400 mb-2">MICRO-SPRAYER</p>
+                            <button id="sprayer-toggle-button" class="control-button off w-full" disabled>Aktifkan Manual</button>
+                            <div class="text-sm mt-3">
+                                <span id="status-sprayer"><i class="fa-solid fa-spray-can-sparkles"></i> SPRAYER: SIAGA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATUS JARINGAN LORA (DIUBAH: HANYA 1 UNIT) -->
+                <h2 class="text-2xl font-bold text-accent mb-4">STATUS JARINGAN LORA</h2>
+                <div class="grid grid-cols-1 gap-6 mb-8">
+                    <!-- Status Unit 2 -->
+                    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <p class="text-sm font-medium text-slate-400 mb-2">SIPESAT-UNIT-002</p>
+                        <div class="flex items-center space-x-3">
+                            <i id="lora-2-icon" class="fa-solid fa-wifi text-2xl text-green-500"></i>
+                            <p id="lora-2-status" class="text-xl font-bold text-green-500">TERHUBUNG</p>
+                        </div>
+                        <p id="lora-2-rssi" class="text-sm text-slate-400 mt-2">RSSI: -75 dBm</p>
+                    </div>
+                </div>
+
+                <!-- (DIHAPUS) GRAFIK SENSOR MODE MALAM -->
+
+                <!-- RIWAYAT AKSI -->
+                <h2 class="text-2xl font-bold text-accent mb-4">RIWAYAT AKSI & PERINGATAN</h2>
+                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-lg">
+                    <ul id="log-list">
+                        <!-- Log akan ditambahkan oleh JavaScript -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- HALAMAN 2: AKTIVITAS HAMA (Grafik Historis) -->
+            <div id="page-aktivitas" class="hidden">
+                <header class="mb-6">
+                    <h1 class="text-3xl font-bold text-white">Analisis Keaktifan Hama</h1>
+                    <p class="text-slate-400">Menampilkan data historis 24 jam terakhir dari [ID: 001]</p>
+                </header>
+
+                <!-- GRAFIK 24 JAM -->
+                <h2 class="text-2xl font-bold text-accent mb-4">GRAFIK AKTIVITAS 24 JAM</h2>
+                <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg mb-8">
+                    <div style="height: 350px;">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- WAWASAN & HEATMAP -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- WAWASAN -->
+                    <div class="lg:col-span-1 bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <h3 class="text-xl font-bold text-accent mb-3">Wawasan Otomatis</h3>
+                        <div class="flex items-start space-x-3 mb-4">
+                            <i class="fa-solid fa-lightbulb text-yellow-400 mt-1"></i>
+                            <div>
+                                <p class="font-semibold text-white">Waktu Aktivitas Puncak</p>
+                                <p class="text-sm text-slate-300">Aktivitas hama terdeteksi paling tinggi antara pukul **19:00 - 22:00**.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <i class="fa-solid fa-thermometer-half text-red-400 mt-1"></i>
+                            <div>
+                                <p class="font-semibold text-white">Kondisi Pemicu</p>
+                                <p class="text-sm text-slate-300">Aktivitas tinggi berkorelasi dengan Suhu **26°C - 28°C** dan Kelembapan **>80%**.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- HEATMAP 24 JAM -->
+                    <div class="lg:col-span-2 bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+                        <h3 class="text-xl font-bold text-accent mb-3">Heatmap Aktivitas Hama (per Jam)</h3>
+                        <table class="heatmap-table">
+                            <thead>
+                                <tr>
+                                    <th>Jam</th><th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Siang</th>
+                                    <td class="heatmap-low" title="00:00 - Rendah"></td>
+                                    <td class="heatmap-low" title="01:00 - Rendah"></td>
+                                    <td class="heatmap-low" title="02:00 - Rendah"></td>
+                                    <td class="heatmap-low" title="03:00 - Rendah"></td>
+                                    <td class="heatmap-medium" title="04:00 - Sedang"></td>
+                                    <td class="heatmap-medium" title="05:00 - Sedang"></td>
+                                    <td class="heatmap-low" title="06:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="07:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="08:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="09:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="10:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="11:00 - Rendah (Siang)"></td>
+                                </tr>
+                            </tbody>
+                            <thead>
+                                <tr>
+                                    <th>Jam</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Malam</th>
+                                    <td class="heatmap-low" title="12:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="13:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="14:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-low" title="15:00 - Rendah (Siang)"></td>
+                                    <td class="heatmap-medium" title="16:00 - Sedang (Siang)"></td>
+                                    <td class="heatmap-medium" title="17:00 - Sedang (Transisi)"></td>
+                                    <td class="heatmap-high" title="18:00 - TINGGI (Malam)">!</td>
+                                    <td class="heatmap-high" title="19:00 - TINGGI (Malam)">!</td>
+                                    <td class="heatmap-high" title="20:00 - TINGGI (Malam)">!</td>
+                                    <td class="heatmap-high" title="21:00 - TINGGI (Malam)">!</td>
+                                    <td class="heatmap-medium" title="22:00 - Sedang (Malam)"></td>
+                                    <td class="heatmap-low" title="23:00 - Rendah (Malam)"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT SIMULASI & KONTROL -->
+    <script>
+        // --- Mendapatkan Elemen DOM (Halaman & Navigasi) ---
+        const pageDashboard = document.getElementById('page-dashboard');
+        const pageAktivitas = document.getElementById('page-aktivitas');
+        const navDashboard = document.getElementById('nav-dashboard');
+        const navAktivitas = document.getElementById('nav-aktivitas');
+
+        // --- Mendapatkan Elemen DOM (Data Sensor) ---
+        const suhuValue = document.getElementById('suhu-value');
+        const kelembapanValue = document.getElementById('kelembapan-value');
+        const modeIcon = document.getElementById('mode-icon');
+        const modeValue = document.getElementById('mode-value');
+        const pirValues = [
+            document.getElementById('pir-1-value'),
+            document.getElementById('pir-2-value'),
+            document.getElementById('pir-3-value'),
+            document.getElementById('pir-4-value')
+        ];
+        const wadahProgress = document.getElementById('wadah-progress');
+        const wadahStatus = document.getElementById('wadah-status');
+        const bateraiProgress = document.getElementById('baterai-progress');
+        const bateraiIcon = document.getElementById('baterai-icon');
+
+        // --- Mendapatkan Elemen DOM (LoRa) ---
+        const lora2Icon = document.getElementById('lora-2-icon');
+        const lora2Status = document.getElementById('lora-2-status');
+        const lora2Rssi = document.getElementById('lora-2-rssi');
+        
+        // --- Mendapatkan Elemen DOM (Chart) ---
+        const ctxHistory = document.getElementById('historyChart').getContext('2d');
+
+        // --- Mendapatkan Elemen DOM (Kontrol & Status) ---
+        const modeToggleButton = document.getElementById('mode-toggle-button');
+        const uvToggleButton = document.getElementById('uv-toggle-button');
+        const sprayerToggleButton = document.getElementById('sprayer-toggle-button');
+        
+        const statusUV = document.getElementById('status-uv');
+        const statusJaring = document.getElementById('status-jaring');
+        const statusSprayer = document.getElementById('status-sprayer');
+        const logList = document.getElementById('log-list');
+
+        // --- Variabel Status Sistem (State) ---
+        let isAutoMode = true;
+        let isUvOn = false;
+        let isSprayerOn = false;
+        
+        let simLDR = 10; // Mulai dari gelap
+        let simWadah = 20;
+        let simBaterai = 95;
+        let simSuhu = 28.0;
+        let simPIRStatus = ['Rendah', 'Rendah', 'Rendah', 'Rendah'];
+        
+        // --- Variabel data untuk Grafik ---
+        let historyChart;
+
+        // --- Fungsi Helper: Menambah Log Riwayat ---
+        function logEvent(message, type = 'auto') {
+            const li = document.createElement('li');
+            const time = new Date().toLocaleTimeString('id-ID');
+            li.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
+            
+            if (type === 'manual') { li.className = 'log-manual'; } 
+            else if (type === 'danger') { li.className = 'log-danger'; } 
+            else if (type === 'system') { li.className = 'log-system'; } 
+            else { li.className = 'log-auto'; }
+            
+            logList.prepend(li);
+            if (logList.children.length > 50) {
+                logList.removeChild(logList.lastChild);
+            }
+        }
+        
+        // (BARU) Fungsi Inisialisasi Grafik Historis 24 Jam
+        function initializeHistoryChart() {
+            const labels = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+            const dataPIR = [1, 1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 4, 4, 3, 2, 1]; // Total deteksi PIR
+            const dataSuhu = [25, 24, 24, 24, 25, 25, 26, 28, 29, 31, 32, 32, 33, 33, 32, 31, 30, 29, 28, 27, 26, 26, 25, 25]; // Suhu
+            const dataKelembapan = [88, 89, 90, 90, 88, 85, 80, 75, 70, 65, 60, 60, 58, 55, 60, 65, 70, 75, 80, 82, 85, 86, 87, 88]; // Kelembapan
+
+            historyChart = new Chart(ctxHistory, {
+                type: 'bar', // Grafik bar untuk aktivitas
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Aktivitas PIR (Total Deteksi)',
+                            data: dataPIR,
+                            backgroundColor: '#FACC15', // yellow-400
+                            order: 2
+                        },
+                        {
+                            label: 'Suhu Rata-rata (°C)',
+                            data: dataSuhu,
+                            borderColor: '#F87171', // red-400
+                            yAxisID: 'ySuhu',
+                            type: 'line', // Tipe line
+                            tension: 0.3,
+                            order: 1
+                        },
+                        {
+                            label: 'Kelembapan Rata-rata (%)',
+                            data: dataKelembapan,
+                            borderColor: '#38BDF8', // sky-400
+                            yAxisID: 'yKelembapan',
+                            type: 'line', // Tipe line
+                            tension: 0.3,
+                            order: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#E2E8F0' } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: '#334155' } },
+                        y: { 
+                            // Sumbu Y utama untuk Bar (Aktivitas)
+                            type: 'linear',
+                            position: 'left',
+                            ticks: { color: '#FACC15', suggestedMin: 0, suggestedMax: 5, stepSize: 1 },
+                            grid: { color: '#334155' }
+                        },
+                        ySuhu: { 
+                            type: 'linear', 
+                            position: 'right', 
+                            ticks: { color: '#F87171' },
+                            grid: { drawOnChartArea: false } // Sembunyikan grid
+                        },
+                        yKelembapan: {
+                            type: 'linear',
+                            position: 'right',
+                            ticks: { color: '#38BDF8' },
+                            grid: { drawOnChartArea: false } // Sembunyikan grid
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Fungsi Logika Inti: updateDashboard (Mensimulasikan Sensor) ---
+        function updateDashboard() {
+            // 1. SIMULASI SENSOR LDR (Cahaya -> Mode)
+            simLDR = (simLDR + 2) % 100; // Siklus siang-malam
+            let isMalam = simLDR < 50;
+            
+            let highActivityCount = 0; 
+
+            if (isMalam) {
+                // --- MODE MALAM: SENSOR AKTIF ---
+                modeValue.textContent = 'Mode Malam';
+                modeIcon.className = 'fa-solid fa-moon text-4xl text-accent';
+
+                // 1. SIMULASI SENSOR DHT22 (Suhu & Kelembapan)
+                simSuhu = (25 + Math.random() * 7).toFixed(1); // 25.0 - 32.0 °C
+                let simKelembapan = (60 + Math.random() * 30).toFixed(0); // 60 - 90 %
+                suhuValue.textContent = `${simSuhu} °C`;
+                kelembapanValue.textContent = `${simKelembapan} %`;
+
+                // 3. SIMULASI SENSOR PIR (4 Sensor)
+                simPIRStatus = pirValues.map((el, i) => {
+                    let simPIR = Math.random();
+                    let status;
+                    if (simPIR < 0.6) { status = 'Rendah'; el.className = 'text-xl font-bold text-green-500'; } 
+                    else if (simPIR < 0.85) { status = 'Sedang'; el.className = 'text-xl font-bold text-yellow-500'; } 
+                    else { status = 'Tinggi'; el.className = 'text-xl font-bold text-red-500'; highActivityCount++; }
+                    el.textContent = status;
+                    return status;
+                });
+
+                // 4. SIMULASI SENSOR ULTRASONIK (Ketinggian Wadah)
+                if (highActivityCount > 0) { simWadah += Math.random() * 1.5; }
+                simWadah = Math.min(simWadah, 100);
+                let wadahPersen = simWadah.toFixed(0);
+                wadahProgress.style.width = `${wadahPersen}%`;
+                wadahProgress.textContent = `${wadahPersen}%`;
+                
+                if (wadahPersen < 70) {
+                    wadahStatus.textContent = 'Kondisi Aman';
+                    wadahStatus.className = 'text-sm text-center mt-2 text-slate-400';
+                    wadahProgress.classList.remove('bg-red-500', 'bg-yellow-500');
+                } else if (wadahPersen < 95) {
+                    wadahStatus.textContent = 'Peringatan: Wadah Hampir Penuh';
+                    wadahStatus.className = 'text-sm text-center mt-2 text-yellow-400';
+                    wadahProgress.classList.remove('bg-red-500');
+                    wadahProgress.classList.add('bg-yellow-500');
+                } else {
+                    wadahStatus.textContent = 'KRITIS: WADAH PENUH! SEGERA KOSONGKAN!';
+                    wadahStatus.className = 'text-sm text-center mt-2 text-red-500 font-bold';
+                    wadahProgress.classList.add('bg-red-500');
+                }
+
+            } else {
+                // --- MODE SIANG: SENSOR STANDBY (HEMAT DAYA) ---
+                modeValue.textContent = 'Mode Siang';
+                modeIcon.className = 'fa-solid fa-sun text-4xl text-accent';
+
+                // (BARU) Matikan Sensor (Kecuali LDR)
+                suhuValue.textContent = 'STANDBY';
+                kelembapanValue.textContent = 'STANDBY';
+                pirValues.forEach(el => {
+                    el.textContent = 'N/A';
+                    el.className = 'text-xl font-bold text-slate-500';
+                });
+                wadahStatus.textContent = 'Sensor Standby (Mode Siang)';
+                wadahProgress.style.width = '0%';
+                wadahProgress.textContent = '0%';
+            }
+
+            // 5. SIMULASI BATERAI (PLTS) - (Tetap aktif)
+            if (isMalam) { simBaterai -= 0.1; } 
+            else { simBaterai += 0.5; }
+            simBaterai = Math.max(0, Math.min(100, simBaterai));
+            let bateraiPersen = simBaterai.toFixed(0);
+            bateraiProgress.style.width = `${bateraiPersen}%`;
+            bateraiProgress.textContent = `${bateraiPersen}%`;
+
+            if (bateraiPersen < 20) {
+                bateraiIcon.className = 'fa-solid fa-battery-quarter text-2xl text-red-500';
+                bateraiProgress.classList.add('bg-red-500');
+            } else {
+                bateraiIcon.className = 'fa-solid fa-battery-full text-2xl text-green-500';
+                bateraiProgress.classList.remove('bg-red-500');
+            }
+            
+            // 6. SIMULASI JARINGAN LORA (Tetap aktif - Hanya 1 Unit)
+            // Unit 2 (Bagus)
+            let rssi2 = - (70 + Math.floor(Math.random() * 10));
+            lora2Rssi.textContent = `RSSI: ${rssi2} dBm`;
+
+
+            // --- Bagian Logika Otomatis (Hanya jika mode Auto) ---
+            if (isAutoMode) {
+                // Logika Auto UV & Jaring
+                if (isMalam && !isUvOn) {
+                    isUvOn = true;
+                    logEvent('Sensor LDR mendeteksi malam. Perangkap (UV & Jaring) diaktifkan.', 'auto');
+                } else if (!isMalam && isUvOn) {
+                    isUvOn = false;
+                    logEvent('Sensor LDR mendeteksi siang. Perangkap (UV & Jaring) dinonaktifkan.', 'auto');
+                }
+
+                // Logika Auto Sprayer (Logika Cerdas 3 Sensor)
+                let isSprayerTriggered = isMalam && simSuhu > 26 && highActivityCount >= 2 && simWadah > 70;
+                
+                if (isSprayerTriggered && !isSprayerOn) {
+                    isSprayerOn = true;
+                    logEvent('Kondisi Darurat Terdeteksi (Suhu, PIR, Ultrasonik). Micro-Sprayer diaktifkan.', 'danger');
+                    // Matikan sprayer otomatis setelah 5 detik (simulasi)
+                    setTimeout(() => {
+                        if (isAutoMode && isSprayerOn) {
+                            isSprayerOn = false;
+                            logEvent('Siklus Micro-Sprayer otomatis selesai.', 'auto');
+                        }
+                    }, 5000); 
+                }
+            }
+            
+            // Panggil fungsi render untuk update UI
+            renderUI();
+        }
+
+        // --- Fungsi Render: Memperbarui UI berdasarkan Status ---
+        function renderUI() {
+            // Update Status Perangkap (UV & Jaring)
+            if (isUvOn) {
+                statusUV.textContent = 'NYALA';
+                statusUV.classList.add('text-yellow-400');
+                statusJaring.textContent = 'AKTIF';
+                statusJaring.classList.add('text-blue-400');
+                uvToggleButton.textContent = 'Nonaktifkan Manual';
+                uvToggleButton.classList.add('on');
+                uvToggleButton.classList.remove('off');
+            } else {
+                statusUV.textContent = 'MATI';
+                statusUV.classList.remove('text-yellow-400');
+                statusJaring.textContent = 'NONAKTIF';
+                statusJaring.classList.remove('text-blue-400');
+                uvToggleButton.textContent = 'Aktifkan Manual';
+                uvToggleButton.classList.add('off');
+                uvToggleButton.classList.remove('on');
+            }
+
+            // Update Status Sprayer
+            if (isSprayerOn) {
+                statusSprayer.textContent = 'MENYEMPROT';
+                statusSprayer.classList.add('text-red-500');
+                sprayerToggleButton.textContent = 'Nonaktifkan Manual';
+                sprayerToggleButton.classList.add('on', 'danger');
+                sprayerToggleButton.classList.remove('off');
+            } else {
+                statusSprayer.textContent = 'SIAGA';
+                statusSprayer.classList.remove('text-red-500');
+                sprayerToggleButton.textContent = 'Aktifkan Manual';
+                sprayerToggleButton.classList.add('off');
+                sprayerToggleButton.classList.remove('on', 'danger');
+            }
+
+            // Update Status Tombol berdasarkan Mode
+            if (isAutoMode) {
+                modeToggleButton.textContent = 'Mode: OTOMATIS';
+                modeToggleButton.classList.add('on');
+                modeToggleButton.classList.remove('off');
+                uvToggleButton.disabled = true;
+                sprayerToggleButton.disabled = true;
+            } else {
+                modeToggleButton.textContent = 'Mode: MANUAL';
+                modeToggleButton.classList.add('off');
+                modeToggleButton.classList.remove('on');
+                uvToggleButton.disabled = false;
+                sprayerToggleButton.disabled = false;
+            }
+        }
+
+        // --- Event Listeners untuk Tombol Kontrol ---
+        modeToggleButton.addEventListener('click', () => {
+            isAutoMode = !isAutoMode;
+            if (isAutoMode) {
+                logEvent('Sistem kembali ke mode OTOMATIS.', 'system');
+                if (isSprayerOn) {
+                    isSprayerOn = false;
+                    logEvent('Sprayer manual dinonaktifkan.', 'auto');
+                }
+            } else {
+                logEvent('Sistem beralih ke mode MANUAL.', 'manual');
+            }
+            renderUI();
+        });
+
+        uvToggleButton.addEventListener('click', () => {
+            if (isAutoMode) return; 
+            isUvOn = !isUvOn;
+            if (isUvOn) { logEvent('Perangkap (UV & Jaring) diaktifkan MANUAL.', 'manual'); } 
+            else { logEvent('Perangkap (UV & Jaring) dinonaktifkan MANUAL.', 'manual'); }
+            renderUI();
+        });
+
+        sprayerToggleButton.addEventListener('click', () => {
+            if (isAutoMode) return;
+            isSprayerOn = !isSprayerOn;
+             if (isSprayerOn) { logEvent('Micro-Sprayer diaktifkan MANUAL.', 'manual'); } 
+             else { logEvent('Micro-Sprayer dinonaktifkan MANUAL.', 'manual'); }
+            renderUI();
+        });
+
+        // Event Listeners untuk Navigasi Halaman
+        navDashboard.addEventListener('click', () => {
+            pageDashboard.classList.remove('hidden');
+            pageAktivitas.classList.add('hidden');
+            navDashboard.classList.add('nav-link-active');
+            navAktivitas.classList.remove('nav-link-active');
+        });
+
+        navAktivitas.addEventListener('click', () => {
+            pageDashboard.classList.add('hidden');
+            pageAktivitas.classList.remove('hidden');
+            navDashboard.classList.remove('nav-link-active');
+            navAktivitas.classList.add('nav-link-active');
+            if (!historyChart) {
+                initializeHistoryChart();
+            }
+        });
+
+
+        // --- Mulai Simulasi ---
+        document.addEventListener('DOMContentLoaded', () => {
+            logEvent('Dashboard terhubung. Sistem SIPESAT Online.', 'system');
+            initializeHistoryChart(); 
+            updateDashboard(); 
+            pageAktivitas.classList.add('hidden');
+        });
+        
+        setInterval(updateDashboard, 3000); // Update setiap 3 detik
+    </script>
+
+</body>
+</html>
